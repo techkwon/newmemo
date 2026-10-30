@@ -16,8 +16,6 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
   private let subtitle = NSTextField(wrappingLabelWithString: "")
   private let enabledButton = NSButton(checkboxWithTitle: "Finder 메뉴에 표시", target: nil, action: nil)
   private let templateView = NSTextView()
-  private let submenuButton = NSButton(
-    checkboxWithTitle: "우클릭 메뉴를 ‘새 파일’ 하위 메뉴로 모으기", target: nil, action: nil)
   private var removeButton: NSButton!
   private var upButton: NSButton!
   private var downButton: NSButton!
@@ -51,7 +49,6 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
         ? "저장된 설정을 읽지 못해 기본값을 표시합니다. 저장하면 원래 설정을 복구용으로 보관합니다."
         : "파일 형식마다 이름과 시작 내용을 지정하세요. 변경한 설정은 저장 후 적용됩니다."
       subtitle.textColor = loaded.usedRecoveryDefaults ? .systemOrange : .secondaryLabelColor
-      submenuButton.state = draft.useSubmenu ? .on : .off
       folderBasenameField.stringValue = draft.folderBasename
       selectRow(draft.presets.isEmpty ? -1 : 0)
     }
@@ -161,7 +158,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
       labelWithString: "파일과 폴더는 위 기본 이름으로 생성하고 Finder에서 선택합니다. 파일은 직접 열어 주세요.")
     behaviorHelp.textColor = .secondaryLabelColor
     behaviorHelp.font = .systemFont(ofSize: 11)
-    let options = vertical([submenuButton, folderName, behaviorHelp], spacing: 7)
+    let options = vertical([folderName, behaviorHelp], spacing: 7)
     let cancel = button("취소", #selector(cancelChanges))
     cancel.keyEquivalent = "\u{1b}"
     let save = button("저장", #selector(saveChanges))
@@ -327,7 +324,7 @@ final class SettingsWindowController: NSWindowController, NSTableViewDataSource,
   @objc private func saveChanges() {
     window?.makeFirstResponder(nil)
     flushFields()
-    draft.useSubmenu = submenuButton.state == .on
+    draft.useSubmenu = true
     draft.folderBasename = folderBasenameField.stringValue
     do {
       try SettingsStore.save(draft)

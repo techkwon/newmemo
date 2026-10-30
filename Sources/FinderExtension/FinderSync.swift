@@ -36,33 +36,37 @@ final class NewMemoFinderSync: FIFinderSync {
     let selectedPaths = snapshot.selectedPaths
     let settings = SettingsStore.loadMenu()
     let menu = NSMenu(title: "새 메모")
-    let contents = NSMenu(title: "새 파일 만들기")
+    let contents = NSMenu(title: "새로 만들기")
     menu.autoenablesItems = false
     contents.autoenablesItems = false
     // Only the currently displayed menu needs its destination snapshot. In particular,
     // do not retain repeated multi-selection URLs across hundreds of old menu items.
     requests.removeAll(keepingCapacity: true)
     let folder = makeItem(
-      "새 폴더 만들기", url: candidate.map { FolderCreateRequest(directory: $0).url })
+      "폴더", url: candidate.map { FolderCreateRequest(directory: $0).url })
     folder.image = NSImage(systemSymbolName: "folder.badge.plus", accessibilityDescription: nil)
-    menu.addItem(folder)
+    contents.addItem(folder)
+    contents.addItem(.separator())
+    var hasFilePresets = false
     for preset in settings.presets where preset.isEnabled {
+      hasFilePresets = true
       let item = makeItem(
-        "새 \(preset.name) 파일",
+        "\(preset.name) 파일",
         url: candidate.map {
           PresetCreateRequest(directory: $0, presetID: preset.id).url
         })
       item.image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: nil)
       contents.addItem(item)
     }
-    if contents.items.isEmpty {
+    if !hasFilePresets {
       let empty = NSMenuItem(title: "활성화된 파일 형식이 없습니다", action: nil, keyEquivalent: "")
+      empty.isEnabled = false
       contents.addItem(empty)
     }
-    if settings.useSubmenu && menuKind != .toolbarItemMenu {
-      let parent = NSMenuItem(title: "새 파일 만들기", action: nil, keyEquivalent: "")
-      parent.submenu = contents
-      menu.addItem(parent)
+    if menuKind != .toolbarItemMenu {
+      contents.addItem(.separator())
+      contents.addItem(makeItem("파일 형식 및 템플릿…", url: URL(string: "newmemo://settings")))
+      addSubmenu(contents, to: menu)
     } else {
       for item in contents.items {
         contents.removeItem(item)
@@ -101,8 +105,10 @@ final class NewMemoFinderSync: FIFinderSync {
       makeItem(
         "여기서 터미널 열기", url: candidate.flatMap { UtilityRequest(action: .terminal, paths: [$0]).url })
     )
-    menu.addItem(.separator())
-    menu.addItem(makeItem("파일 형식 및 템플릿…", url: URL(string: "newmemo://settings")))
+    if menuKind == .toolbarItemMenu {
+      menu.addItem(.separator())
+      menu.addItem(makeItem("파일 형식 및 템플릿…", url: URL(string: "newmemo://settings")))
+    }
     return menu
   }
 
